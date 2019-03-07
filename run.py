@@ -61,7 +61,7 @@ def download_a_video(user_id, video_id, num_thread=10):
     if 0 == len(tbl.search(Query().id == video_id)):
         return -10000
     else:
-        if tbl.search(Query().id == video_id & Query().uploaded.exists()):
+        if tbl.search((Query().id == video_id) & Query().uploaded.exists()):
             return -20000
 
     cmd = 'streamlink --hls-segment-threads {num_th} {url} best -o {dst}'
