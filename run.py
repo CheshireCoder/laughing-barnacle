@@ -77,7 +77,8 @@ def download_a_video(user_id, video_id, num_thread=10):
     else:
         local_path_finished = _get_video_file_name(user_id, video_id)
         os.rename(local_path, local_path_finished)
-        tbl.update(dict(download_path=local_path_finished, downloaded=True, uploaded=False), Query().id == video_id)
+        local_path = os.path.abspath(local_path_finished)
+        tbl.update(dict(download_path=local_path, downloaded=True, uploaded=False), Query().id == video_id)
 
     return exit_code
 
@@ -124,7 +125,7 @@ def list_non_downloaded(user_name):
 def list_non_uploaded(user_name):
     user_id = _get_user_id(user_name)
     tbl = db.table(user_id)
-    res = tbl.search(where('downloaded') == True & where('uploaded') == False)
+    res = tbl.search((where('downloaded') == True) & (where('uploaded') == False))
     for row in res:
         print("ID: {id} Date: {published_at} Title: {title}".format(**row))
     return res
@@ -133,7 +134,7 @@ def list_non_uploaded(user_name):
 def check_done(user_id, video_id):
     tbl = db.table(str(user_id))
     res = tbl.update(dict(downloaded=True, uploaded=True), Query().id == video_id)
-    if 0 == res:
+    if 0 == len(res):
         print("Couldn't find id {vid}".format(vid=video_id))
     else:
         print("Checked id {vid}".format(vid=video_id))
