@@ -153,8 +153,8 @@ def _datetime_from_vid_info(vid_info):
 
 
 def do_by(user_name, num=1):
-    arr = sorted(list_non_downloaded(user_name), key=_datetime_from_vid_info)
     user_id = _get_user_id(user_name)
+    arr = sorted(db.table(user_id).search(where('downloaded') == False), key=_datetime_from_vid_info)
     for i in range(int(num)):
         video_id = arr[i]
         ret = -1
