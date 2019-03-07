@@ -21,7 +21,7 @@ def _get_video_list(user_id, size=100):
 def _save_video_list(user_id, arr_list):
     table = db.table(str(user_id))
     for row in arr_list:
-        if 0 == len(table.search(Query().id == row['id'])):
+        if 0 == len(table.get(Query().id == row['id'])):
             row['downloaded'] = False
             table.insert(row)
 
@@ -32,7 +32,7 @@ def update_video_list(user_id):
 
 def _get_video_file_name(user_id, video_id):
     tbl = db.table(str(user_id))
-    row = tbl.search(Query().id == video_id)
+    row = tbl.get(Query().id == video_id)
     file_name = "{time} {title}.ts"
     return file_name.format(time=row['published_at'], title=row['title'])
 
@@ -72,12 +72,12 @@ def download_a_video(user_id, video_id, num_thread=10):
     (output, err) = pr.communicate()
     exit_code = pr.wait()
     if 0 != exit_code:
-        print("Download Failed. exit code: ")
+        print("Download Failed. exit code: {exit_code}".format(exit_code=exit_code))
         os.unlink(local_path)
     else:
         local_path_finished = _get_video_file_name(user_id, video_id)
         os.rename(local_path, local_path_finished)
-        tbl.update({'download_path': local_path_finished, 'uploaded': False}, Query().id == video_id)
+        tbl.update(dict(download_path=local_path_finished, downloaded=True, uploaded=False), Query().id == video_id)
 
     return exit_code
 
@@ -89,11 +89,11 @@ def upload_a_video(user_id, video_id, dst_path=''):
     if 0 == len(tbl.search(Query().id == video_id)):
         return -10000
     else:
-        if tbl.search(Query().video_id == video_id)['uploaded']:
+        if tbl.get(Query().video_id == video_id)['uploaded']:
             return -20000
 
-    local_path = tbl.search(Query().id == video_id)['local_path_finished']
-    dst_name = db.search(Query().user_id == user_id)['dst_name']
+    local_path = tbl.get(Query().id == video_id)['local_path_finished']
+    dst_name = db.get(Query().user_id == user_id)['dst_name']
     arr_cmd = 'rclone copy {src} {dst_name}:{dst_path}'\
         .format(src=local_path, dst_name=dst_name, dst_path=dst_path)\
         .split(' ')
@@ -133,10 +133,10 @@ def list_non_uploaded(user_name):
 def check_done(user_id, video_id):
     tbl = db.table(str(user_id))
     res = tbl.update(dict(downloaded=True, uploaded=True), Query().id == video_id)
-    if 1 == res:
-        print("Checked id {vid}".format(vid=video_id))
-    else:
+    if 0 == res:
         print("Couldn't find id {vid}".format(vid=video_id))
+    else:
+        print("Checked id {vid}".format(vid=video_id))
 
 
 def down_and_up_all(user_name):
