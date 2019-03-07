@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import os, sys
 import requests
 from tinydb import *
@@ -71,10 +72,10 @@ def download_a_video(user_id, video_id, num_thread=10):
     (output, err) = pr.communicate()
     exit_code = pr.wait()
     if 0 != exit_code:
-        print(err)
+        print("Download Failed. exit code: ")
         os.unlink(local_path)
     else:
-        local_path_finished = _get_video_file_name(video_id)
+        local_path_finished = _get_video_file_name(user_id, video_id)
         os.rename(local_path, local_path_finished)
         tbl.update({'download_path': local_path_finished, 'uploaded': False}, Query().id == video_id)
 
