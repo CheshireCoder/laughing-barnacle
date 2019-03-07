@@ -132,7 +132,7 @@ def list_non_uploaded(user_name):
 
 def check_done(user_id, video_id):
     tbl = db.table(str(user_id))
-    res = tbl.update({'uploaded': True}, Query().id == video_id)
+    res = tbl.update(dict(downloaded=True, uploaded=True), Query().id == video_id)
     if 1 == res:
         print("Checked id {vid}".format(vid=video_id))
     else:
@@ -149,7 +149,22 @@ def down_and_up_all(user_name):
             upload_a_video(_get_user_id(user_name), item['id'])
 
 
+def show_instruction():
+    print("Usage: run.py [options] [twitch user name] [argument1...]"
+          "  options:"
+          "    no-down\tprints list of non-downloaded videos"
+          "    no-up\tprints list of non-uploaded videos"
+          "    check\tcheck video id done "
+          "    set\tsets destination name (to call rclone)"
+          "    down\tdownload a video"
+          "    up\tupload downloaded video"
+          "    all\tdownload and upload all available video one by one")
+
+
 def main():
+    if len(sys.argv < 3):
+        show_instruction()
+        return
     action = sys.argv[1].lower()
     if 'no-down' == action:
         list_non_downloaded(sys.argv[2])
