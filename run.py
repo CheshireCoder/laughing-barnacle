@@ -37,17 +37,16 @@ def _get_video_file_name(user_id, video_id):
 
 
 def _get_user_id(user_name):
-    tbl = db.table(tbl_user)
-    res = tbl.search(Query().user_name == user_name)
+    res = db.search(Query().user_name == user_name)
     if 0 == len(res):
         ep = 'https://api.twitch.tv/helix/users'
         dic_param = {'login': user_name}
         dic_header = twitch_CID
         res = requests.get(ep, params=dic_param, headers=dic_header)
         user_id = res.json()['data'][0]['id']
-        tbl.insert(dict(user_name=user_name, user_id=user_id))
+        db.insert(dict(user_name=user_name, user_id=user_id))
     else:
-        user_id = res['user_id']
+        user_id = res[0]['user_id']
     return user_id
 
 
