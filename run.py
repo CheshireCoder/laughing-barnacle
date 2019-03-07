@@ -124,7 +124,7 @@ def list_non_downloaded(user_name):
 def list_non_uploaded(user_name):
     user_id = _get_user_id(user_name)
     tbl = db.table(user_id)
-    res = tbl.search((where('downloaded') == True) & (where('uploaded') == False))
+    res = tbl.search((Query().downloaded == True) & (Query().uploaded == False))
     for row in res:
         print("ID: {id} Date: {published_at} Title: {title}".format(**row))
     return res
