@@ -96,9 +96,7 @@ def upload_a_video(user_id, video_id, dst_path=''):
 
     local_path = vid_info['download_path']
     dst_name = db.get(Query().user_id == user_id)['dst_name']
-    arr_cmd = 'rclone copy {src} {dst_name}:{dst_path}'\
-        .format(src=local_path, dst_name=dst_name, dst_path=dst_path)\
-        .split(' ')
+    arr_cmd = ['rclone', 'copy', local_path, dst_name+':'+dst_path]
     while 0 != exit_code:
         pr = Popen(arr_cmd, stdout=PIPE)
         (output, err) = pr.communicate()
