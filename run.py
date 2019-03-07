@@ -162,7 +162,7 @@ def show_instruction():
 
 
 def main():
-    if len(sys.argv < 3):
+    if len(sys.argv) < 3:
         show_instruction()
         return
     action = sys.argv[1].lower()
