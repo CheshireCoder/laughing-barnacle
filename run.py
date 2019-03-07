@@ -149,7 +149,7 @@ def down_and_up_all(user_name):
 
 
 def _datetime_from_vid_info(vid_info):
-    return datetime.datetime.strptime(vid_info['published_at'], "%Y-%m-%dT%H:%M:%S%z")
+    return datetime.datetime.strptime(vid_info['published_at'], "%Y-%m-%dT%H:%M:%SZ")
 
 
 def do_by(user_name, num=1):
