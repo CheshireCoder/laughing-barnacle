@@ -53,7 +53,7 @@ def _get_user_id(user_name):
 
 def _set_dst_name(user_name, dst_name):
     user_id = _get_user_id(user_name)
-    db.insert({'user_name': user_name, 'user_id': user_id, 'dst_name': dst_name})
+    db.update({'dst_name': dst_name}, Query().user_id == user_id)
 
 
 def download_a_video(user_id, video_id, num_thread=10):
