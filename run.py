@@ -94,7 +94,7 @@ def upload_a_video(user_id, video_id, dst_path=''):
         if vid_info['uploaded']:
             return -20000
 
-    local_path = vid_info['local_path_finished']
+    local_path = vid_info['download_path']
     dst_name = db.get(Query().user_id == user_id)['dst_name']
     arr_cmd = 'rclone copy {src} {dst_name}:{dst_path}'\
         .format(src=local_path, dst_name=dst_name, dst_path=dst_path)\
