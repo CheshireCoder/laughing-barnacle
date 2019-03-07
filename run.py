@@ -3,6 +3,7 @@ import os, sys
 import requests
 from tinydb import *
 from subprocess import Popen, PIPE
+import datetime
 
 db = TinyDB('./db.json')
 tbl_user = 'user_name_to_id'
@@ -61,8 +62,7 @@ def download_a_video(user_id, video_id, num_thread=10):
 
     if 0 == len(tbl.search(Query().id == video_id)):
         return -10000
-    else:
-        if tbl.search((Query().id == video_id) & Query().uploaded.exists()):
+    elif tbl.search((Query().id == video_id) & Query().uploaded.exists()):
             return -20000
 
     cmd = 'streamlink --hls-segment-threads {num_th} {url} best -o {dst}'
@@ -90,8 +90,7 @@ def upload_a_video(user_id, video_id, dst_path=''):
 
     if None is vid_info:
         return -10000
-    else:
-        if vid_info['uploaded']:
+    elif vid_info['uploaded']:
             return -20000
 
     local_path = vid_info['download_path']
@@ -149,15 +148,32 @@ def down_and_up_all(user_name):
             upload_a_video(_get_user_id(user_name), item['id'])
 
 
+def _datetime_from_vid_info(vid_info):
+    return datetime.datetime.strptime(vid_info['published_at'], "%Y-%m-%dT%H:%M:%S%z")
+
+
+def do_by(user_name, num=1):
+    arr = sorted(list_non_downloaded(user_name), key=_datetime_from_vid_info)
+    user_id = _get_user_id(user_name)
+    for i in range(int(num)):
+        video_id = arr[i]
+        ret = -1
+        while ret not in [0, -10000, -20000]:
+            ret = download_a_video(user_id, video_id)
+        ret = -1
+        while ret not in [0, -10000, -20000]:
+            ret = upload_a_video(user_id, video_id)
+
+
 def show_instruction():
-    print("Usage: run.py [options] [twitch user name] [argument1...]"
-          "  options:"
-          "    no-down\tprints list of non-downloaded videos"
-          "    no-up\tprints list of non-uploaded videos"
-          "    check\tcheck video id done "
-          "    set\tsets destination name (to call rclone)"
-          "    down\tdownload a video"
-          "    up\tupload downloaded video"
+    print("Usage: run.py [options] [twitch user name] [argument1...]"       '\n'
+          "  options:"                                                      '\n'
+          "    no-down\tprints list of non-downloaded videos"               '\n'
+          "    no-up\tprints list of non-uploaded videos"                   '\n'
+          "    check\tcheck video id done "                                 '\n'
+          "    set\tsets destination name (to call rclone)"                 '\n'
+          "    down\tdownload a video"                                      '\n'
+          "    up\tupload downloaded video"                                 '\n'
           "    all\tdownload and upload all available video one by one")
 
 
@@ -165,21 +181,29 @@ def main():
     if len(sys.argv) < 3:
         show_instruction()
         return
-    action = sys.argv[1].lower()
+    else:
+        action = sys.argv[1].lower()
+        user_name = sys.argv[2]
+        user_id = _get_user_id(sys.argv[2])
     if 'no-down' == action:
-        list_non_downloaded(sys.argv[2])
-    if 'no-up' == action:
-        list_non_uploaded(sys.argv[2])
-    if 'check' == action:
-        check_done(_get_user_id(sys.argv[2]), sys.argv[3])
-    if 'set' == action:
-        _set_dst_name(sys.argv[2], sys.argv[3])
-    if 'down' == action:
-        download_a_video(_get_user_id(sys.argv[2]), sys.argv[3])
-    if 'up' == action:
-        upload_a_video(_get_user_id(sys.argv[2]), sys.argv[3])
-    if 'all' == action:
-        down_and_up_all(sys.argv[2])
+        list_non_downloaded(user_name)
+    elif 'no-up' == action:
+        list_non_uploaded(user_name)
+    elif 'check' == action:
+        check_done(user_id, sys.argv[3])
+    elif 'set' == action:
+        _set_dst_name(user_name, sys.argv[3])
+    elif 'down' == action:
+        download_a_video(user_id, sys.argv[3])
+    elif 'up' == action:
+        upload_a_video(user_id, sys.argv[3])
+    elif 'all' == action:
+        down_and_up_all(user_name)
+    elif 'do' == action:
+        if len(sys.argv) < 4:
+            do_by(user_name)
+        else:
+            do_by(user_name, sys.argv[3])
 
 
 if __name__ == '__main__':
