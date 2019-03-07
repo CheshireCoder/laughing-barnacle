@@ -21,7 +21,7 @@ def _get_video_list(user_id, size=100):
 def _save_video_list(user_id, arr_list):
     table = db.table(str(user_id))
     for row in arr_list:
-        if 0 == len(table.get(Query().id == row['id'])):
+        if None is table.get(Query().id == row['id']):
             row['downloaded'] = False
             table.insert(row)
 
@@ -31,7 +31,7 @@ def update_video_list(user_id):
 
 
 def _get_video_file_name(user_id, video_id):
-    tbl = db.table(str(user_id))
+    tbl = db.table(user_id)
     row = tbl.get(Query().id == video_id)
     file_name = "{time} {title}.ts"
     return file_name.format(time=row['published_at'], title=row['title'])
@@ -39,7 +39,7 @@ def _get_video_file_name(user_id, video_id):
 
 def _get_user_id(user_name):
     res = db.get(Query().user_name == user_name)
-    if 0 == len(res):
+    if None is res:
         ep = 'https://api.twitch.tv/helix/users'
         dic_param = {'login': user_name}
         dic_header = twitch_CID
@@ -57,7 +57,7 @@ def _set_dst_name(user_name, dst_name):
 
 
 def download_a_video(user_id, video_id, num_thread=10):
-    tbl = db.table(str(user_id))
+    tbl = db.table(user_id)
 
     if 0 == len(tbl.search(Query().id == video_id)):
         return -10000
@@ -85,15 +85,16 @@ def download_a_video(user_id, video_id, num_thread=10):
 
 def upload_a_video(user_id, video_id, dst_path=''):
     exit_code = -1
-    tbl = db.table(str(user_id))
+    tbl = db.table(user_id)
+    vid_info = tbl.get(Query().id == video_id)
 
-    if 0 == len(tbl.search(Query().id == video_id)):
+    if None is vid_info:
         return -10000
     else:
-        if tbl.get(Query().video_id == video_id)['uploaded']:
+        if vid_info['uploaded']:
             return -20000
 
-    local_path = tbl.get(Query().id == video_id)['local_path_finished']
+    local_path = vid_info['local_path_finished']
     dst_name = db.get(Query().user_id == user_id)['dst_name']
     arr_cmd = 'rclone copy {src} {dst_name}:{dst_path}'\
         .format(src=local_path, dst_name=dst_name, dst_path=dst_path)\
@@ -132,7 +133,7 @@ def list_non_uploaded(user_name):
 
 
 def check_done(user_id, video_id):
-    tbl = db.table(str(user_id))
+    tbl = db.table(user_id)
     res = tbl.update(dict(downloaded=True, uploaded=True), Query().id == video_id)
     if 0 == len(res):
         print("Couldn't find id {vid}".format(vid=video_id))
