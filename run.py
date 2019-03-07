@@ -156,7 +156,7 @@ def do_by(user_name, num=1):
     user_id = _get_user_id(user_name)
     arr = sorted(db.table(user_id).search(where('downloaded') == False), key=_datetime_from_vid_info)
     for i in range(int(num)):
-        video_id = arr[i]
+        video_id = arr[i]['id']
         ret = -1
         while ret not in [0, -10000, -20000]:
             ret = download_a_video(user_id, video_id)
