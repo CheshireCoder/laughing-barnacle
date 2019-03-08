@@ -12,3 +12,6 @@ is a script to download twitch videos of a user(via [streamlink](https://github.
 1. install preinstall requirements.
 2. set remote storage name.
 3. start download and upload.
+
+# ToDo
+* Exception handling (now: none)

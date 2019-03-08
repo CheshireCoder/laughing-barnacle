@@ -36,8 +36,7 @@ def update_video_list(user_id):
 def _get_video_file_name(user_id, video_id):
     tbl = db.table(user_id)
     row = tbl.get(Query().id == video_id)
-    file_name = "{time} {title} {duration}.ts"
-    return file_name.format(**row)
+    return "{published_at} {title} {duration}.ts".format(**row)
 
 
 def _get_user_id(user_name):
@@ -80,19 +79,19 @@ def download_a_video(user_id, video_id, num_thread=10):
         local_path_finished = _get_video_file_name(user_id, video_id)
         os.rename(local_path, local_path_finished)
         local_path = os.path.abspath(local_path_finished)
+        print("Successfully downloaded video {id}".format(id=video_id))
         tbl.update(dict(download_path=local_path, downloaded=True, uploaded=False), Query().id == video_id)
 
     return exit_code
 
 
 def upload_a_video(user_id, video_id, dst_path=''):
-    exit_code = -1
     tbl = db.table(user_id)
     vid_info = tbl.get(Query().id == video_id)
 
     if None is vid_info:
         return -10000
-    elif vid_info['uploaded'] and not os.path.exists(vid_info['download_path']):
+    elif not os.path.exists(vid_info['download_path']):
             return -20000
 
     local_path = vid_info['download_path']
@@ -106,7 +105,7 @@ def upload_a_video(user_id, video_id, dst_path=''):
     else:
         os.unlink(local_path)
         print("Successfully uploaded video {id}".format(**vid_info))
-        tbl.update({'uploaded': True}, Query().video_id == video_id)
+        tbl.update({'uploaded': True}, Query().id == video_id)
 
     return exit_code
 
@@ -139,12 +138,9 @@ def do_by(user_name, num=1):
     arr = sorted(db.table(user_id).search(where('downloaded') == False), key=_datetime_from_vid_info)
     for i in range(int(num)):
         video_id = arr[i]['id']
-        ret = -1
-        while ret not in [0, -10000, -20000]:
-            ret = download_a_video(user_id, video_id)
-        ret = -1
-        while ret not in [0, -10000, -20000]:
-            ret = upload_a_video(user_id, video_id)
+        ret = download_a_video(user_id, video_id)
+        if ret not in [0, -10000, -20000]:
+            upload_a_video(user_id, video_id)
 
 
 def list_non_downloaded(user_name):
@@ -200,9 +196,9 @@ def main():
         user_name = sys.argv[2]
         user_id = _get_user_id(sys.argv[2])
     if 'no-down' == action:
-        list_non_downloaded(user_name)
+        print_list(list_non_downloaded(user_name))
     elif 'no-up' == action:
-        list_non_uploaded(user_name)
+        print_list(list_non_uploaded(user_name))
     elif 'check' == action:
         check_done(user_id, sys.argv[3])
     elif 'set' == action:
