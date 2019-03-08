@@ -1,9 +1,11 @@
 #!/usr/bin/python3
-import os, sys
+import datetime
+import os
+import sys
+from subprocess import Popen, PIPE
+
 import requests
 from tinydb import *
-from subprocess import Popen, PIPE
-import datetime
 
 db = TinyDB('./db.json')
 tbl_user = 'user_name_to_id'
@@ -34,8 +36,8 @@ def update_video_list(user_id):
 def _get_video_file_name(user_id, video_id):
     tbl = db.table(user_id)
     row = tbl.get(Query().id == video_id)
-    file_name = "{time} {title}.ts"
-    return file_name.format(time=row['published_at'], title=row['title'])
+    file_name = "{time} {title} {duration}.ts"
+    return file_name.format(**row)
 
 
 def _get_user_id(user_name):
@@ -90,43 +92,23 @@ def upload_a_video(user_id, video_id, dst_path=''):
 
     if None is vid_info:
         return -10000
-    elif vid_info['uploaded']:
+    elif vid_info['uploaded'] and not os.path.exists(vid_info['download_path']):
             return -20000
 
     local_path = vid_info['download_path']
     dst_name = db.get(Query().user_id == user_id)['dst_name']
     arr_cmd = ['rclone', 'copy', local_path, dst_name+':'+dst_path]
-    while 0 != exit_code:
-        pr = Popen(arr_cmd, stdout=PIPE)
-        (output, err) = pr.communicate()
-        exit_code = pr.wait()
-        if 0 != exit_code:
-            print(err)
-        else:
-            os.unlink(local_path)
-            tbl.update({'uploaded': True}, Query().video_id == video_id)
+    pr = Popen(arr_cmd, stdout=PIPE)
+    (output, err) = pr.communicate()
+    exit_code = pr.wait()
+    if 0 != exit_code:
+        print("Could not upload video {id}.".format(**vid_info))
+    else:
+        os.unlink(local_path)
+        print("Successfully uploaded video {id}".format(**vid_info))
+        tbl.update({'uploaded': True}, Query().video_id == video_id)
 
     return exit_code
-
-
-def list_non_downloaded(user_name):
-    user_id = _get_user_id(user_name)
-    update_video_list(user_id)
-
-    tbl = db.table(user_id)
-    res = tbl.search(where('downloaded') == False)
-    for row in res:
-        print("ID: {id} Date: {published_at} Title: {title}".format(**row))
-    return res
-
-
-def list_non_uploaded(user_name):
-    user_id = _get_user_id(user_name)
-    tbl = db.table(user_id)
-    res = tbl.search((Query().downloaded == True) & (Query().uploaded == False))
-    for row in res:
-        print("ID: {id} Date: {published_at} Title: {title}".format(**row))
-    return res
 
 
 def check_done(user_id, video_id):
@@ -163,6 +145,38 @@ def do_by(user_name, num=1):
         ret = -1
         while ret not in [0, -10000, -20000]:
             ret = upload_a_video(user_id, video_id)
+
+
+def list_non_downloaded(user_name):
+    user_id = _get_user_id(user_name)
+    update_video_list(user_id)
+    tbl = db.table(user_id)
+    res = tbl.search(where('downloaded') == False)
+    return res
+
+
+def list_non_uploaded(user_name):
+    user_id = _get_user_id(user_name)
+    tbl = db.table(user_id)
+    res = tbl.search((Query().downloaded == True) & (Query().uploaded == False))
+    return res
+
+
+def list_done(user_name, per_page, num_page):
+    user_id = _get_user_id(user_name)
+    tbl = db.table(user_id)
+    offset = num_page * per_page
+    res = tbl.search(Query().uploaded == True)
+    if len(res) <= offset + num_page:
+        ret = res[offset:len(res)-1]
+    else:
+        ret = res[offset:offset + num_page]
+    return ret
+
+
+def print_list(arr_dat):
+    for dat in arr_dat:
+        print("ID: {id} Date: {published_at} Title: {title} Duration: {duration}".format(**dat))
 
 
 def show_instruction():
