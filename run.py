@@ -75,7 +75,7 @@ def _set_dst_name(user_name, dst_name):
         if ':' in dst_name:
             Popen(['rclone', 'mkdir', dst_name]).wait()
         db.update({'dst_name': dst_name}, Query().user_id == user_id)
-        print("Set destination of {user_id} videos to {dst_name}")
+        print("Set destination of {user} videos to {dst_name}".format(user=user_name, dst_name=dst_name))
 
 
 def download_a_video(user_id, video_id, num_thread=10):
