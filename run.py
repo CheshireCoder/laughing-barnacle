@@ -262,9 +262,8 @@ def main():
             do_by(user_name)
         else:
             do_by(user_name, sys.argv[3])
+    db.close()
 
-
-db.close()
 
 if __name__ == '__main__':
     main()
