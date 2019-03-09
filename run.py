@@ -104,7 +104,7 @@ def download_a_video(user_id, video_id, num_thread=10):
         local_path_finished = _get_video_file_name(user_id, video_id)
         os.rename(local_path, local_path_finished)
         local_path = os.path.abspath(local_path_finished)
-        print("Successfully downloaded video {id}".format(id=video_id))
+        print("Successfully downloaded video {id}, to {download_path}".format(id=video_id, download_path=local_path))
         tbl.update(dict(download_path=local_path, downloaded=True, uploaded=False), Query().id == video_id)
 
     return exit_code
@@ -151,16 +151,6 @@ def check_done_m(user_id, arr_v_id):
         check_done(user_id, v_id)
 
 
-def down_and_up_all(user_name):
-    arr = list_non_uploaded(user_name)
-    for item in arr:
-        upload_a_video(get_user_id(user_name), item['id'])
-    arr = list_non_downloaded(user_name)
-    for item in arr:
-        if 0 == download_a_video(get_user_id(user_name), item['id']):
-            upload_a_video(get_user_id(user_name), item['id'])
-
-
 def _datetime_from_vid_info(vid_info):
     return datetime.datetime.strptime(vid_info['published_at'], "%Y-%m-%dT%H:%M:%SZ")
 
@@ -175,6 +165,20 @@ def do_by(user_name, num=1):
         ret = download_a_video(user_id, video_id)
         if ret not in [0, -10000, -20000]:
             upload_a_video(user_id, video_id)
+
+
+def show_instruction():
+    print("""
+    Usage: run.py [options] [twitch user name] [argument1...]
+      options:
+        no-down prints list of non-downloaded videos
+        no-up   prints list of non-uploaded videos
+        check   check video id(s) done.
+        set     sets destination name (to call rclone)
+        down    download a video
+        up      upload downloaded video
+        all     download and upload all available video one by one
+    """)
 
 
 def list_user():
@@ -216,18 +220,14 @@ def print_list(arr_dat):
         print("ID: {id} Date: {published_at} Title: {title} Duration: {duration}".format(**dat))
 
 
-def show_instruction():
-    print("""
-    Usage: run.py [options] [twitch user name] [argument1...]
-      options:
-        no-down prints list of non-downloaded videos
-        no-up   prints list of non-uploaded videos
-        check   check video id(s) done.
-        set     sets destination name (to call rclone)
-        down    download a video
-        up      upload downloaded video
-        all     download and upload all available video one by one
-    """)
+def do_all(user_name):
+    arr = list_non_uploaded(user_name)
+    for item in arr:
+        upload_a_video(get_user_id(user_name), item['id'])
+    arr = list_non_downloaded(user_name)
+    for item in arr:
+        if 0 == download_a_video(get_user_id(user_name), item['id']):
+            upload_a_video(get_user_id(user_name), item['id'])
 
 
 def main():
@@ -256,13 +256,15 @@ def main():
     elif 'up' == action:
         upload_a_video(user_id, sys.argv[3])
     elif 'all' == action:
-        down_and_up_all(user_name)
+        do_all(user_name)
     elif 'do' == action:
         if len(sys.argv) < 4:
             do_by(user_name)
         else:
             do_by(user_name, sys.argv[3])
 
+
+db.close()
 
 if __name__ == '__main__':
     main()
