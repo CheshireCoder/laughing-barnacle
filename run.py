@@ -13,6 +13,7 @@ daily_limit = 750 * 1024 * 1024 * 1024  # daily upload limit 750 GB
 tbl_user = 'users'
 tbl_video = 'videos'
 tbl_upload = 'uploads'
+tbl_remote = 'remotes'
 
 
 def _get_video_list(user_id, size=100):
@@ -67,7 +68,7 @@ def _set_dst_name(user_name, dst_name):
         dst = dst_name.split(':')[0]
     else:
         dst = dst_name
-    pr = Popen(['rclone', 'show', dst])
+    pr = Popen(['rclone', 'config', 'show', dst])
     if 0 != pr.wait():
         print("Storage is not defined in rclone")
     else:
@@ -218,14 +219,14 @@ def print_list(arr_dat):
 def show_instruction():
     print("""
     Usage: run.py [options] [twitch user name] [argument1...]
-    options:
-    no-down prints list of non-downloaded videos
-    no-up   prints list of non-uploaded videos
-    check   check video id(s) done.
-    set     sets destination name (to call rclone)
-    down    download a video
-    up      upload downloaded video
-    all     download and upload all available video one by one
+      options:
+        no-down prints list of non-downloaded videos
+        no-up   prints list of non-uploaded videos
+        check   check video id(s) done.
+        set     sets destination name (to call rclone)
+        down    download a video
+        up      upload downloaded video
+        all     download and upload all available video one by one
     """)
 
 
