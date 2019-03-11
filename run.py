@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+
 import datetime
 import os
 import sys
@@ -30,7 +31,7 @@ def _save_video_list(user_id, arr_list):
     for row in arr_list:
         if None is table.get(Query().id == row['id']):
             row['downloaded'] = False
-            table.insert(row)
+        table.update(row, Query().id == row['id'])
 
 
 def update_video_list(user_id):
@@ -40,7 +41,7 @@ def update_video_list(user_id):
 def _get_video_file_name(user_id, video_id):
     tbl = db.table(user_id)
     row = tbl.get(Query().id == video_id)
-    return "{published_at} {title} {duration}.ts".format(**row)
+    return "{published_at} {title} ({duration}).ts".format(**row)
 
 
 def get_user_id(user_name):
@@ -231,7 +232,7 @@ def do_all(user_name):
 
 
 def main():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         show_instruction()
         return
     else:
@@ -262,6 +263,8 @@ def main():
             do_by(user_name)
         else:
             do_by(user_name, sys.argv[3])
+    else:
+        show_instruction()
     db.close()
 
 
